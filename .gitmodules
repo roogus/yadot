@@ -10,3 +10,6 @@
 [submodule ".config/sway/base16-sway"]
 	path = .config/sway/base16-sway
 	url = git@github.com:rkubosz/base16-sway.git
+[submodule ".config/fzf/base16-fzf"]
+	path = .config/fzf/base16-fzf
+	url = git@github.com:base16-project/base16-fzf.git

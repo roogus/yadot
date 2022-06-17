@@ -13,3 +13,6 @@
 [submodule ".config/fzf/base16-fzf"]
 	path = .config/fzf/base16-fzf
 	url = git@github.com:base16-project/base16-fzf.git
+[submodule ".config/mvi"]
+	path = .config/mvi
+	url = git@github.com:occivink/mpv-image-viewer.git

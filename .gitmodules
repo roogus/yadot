@@ -7,3 +7,6 @@
 [submodule ".config/base16-shell"]
 	path = .config/base16-shell
 	url = git@github.com:chriskempson/base16-shell.git
+[submodule ".config/sway/base16-sway"]
+	path = .config/sway/base16-sway
+	url = git@github.com:rkubosz/base16-sway.git

@@ -1,0 +1,144 @@
+#!/bin/bash
+SCRIPTNAME=$(basename $0)
+SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+# Base16-GruvBox-Dark-Hard
+#color00='#1d2021'
+#color01='#3c3836'
+#color02='#504945'
+#color03='#665c54'
+#color04='#bdae93'
+#color05='#d5c4a1'
+#color06='#ebdbb2'
+#color07='#fbf1c7'
+#color08='#fb4934'
+#color09='#fe8019'
+#color0A='#fabd2f'
+#color0B='#b8bb26'
+#color0C='#8ec07c'
+#color0D='#83a598'
+#color0E='#d3869b'
+#color0F='#d65d0e'
+
+# Base16-GruvBox-Dark-Soft
+color00='#32302f'
+color01='#3c3836'
+color02='#504945'
+color03='#665c54'
+color04='#bdae93'
+color05='#d5c4a1'
+color06='#ebdbb2'
+color07='#fbf1c7'
+color08='#fb4934'
+color09='#fe8019'
+color0A='#fabd2f'
+color0B='#b8bb26'
+color0C='#8ec07c'
+color0D='#83a598'
+color0E='#d3869b'
+color0F='#d65d0e'
+
+if [[ -n $THEME ]]; then
+    #fzf_color="--color=$THEME"
+#else
+
+    fzf_color="--color=bg+:$color01,bg:$color00,spinner:$color0C,hl:$color0D"
+    fzf_color="${fzf_color},fg:$color04,header:$color0D,info:$color0A,pointer:$color0C"
+    fzf_color="${fzf_color},marker:$color0C,fg+:$color06,prompt:$color0A,hl+:$color0D"
+fi
+
+fzf_color="--color=bg+:$color01,bg:$color00,spinner:$color0C,hl:$color0D"
+fzf_color="${fzf_color},fg:$color04,header:$color0D,info:$color0A,pointer:$color0C"
+fzf_color="${fzf_color},marker:$color0C,fg+:$color06,prompt:$color0A,hl+:$color0D"
+
+
+rm_field_codes() {
+    str=$1
+    str=${str//\%f/}
+    str=${str//\%F/}
+    str=${str//\%u/}
+    str=${str//\%U/}
+    str=${str//\%d/}
+    str=${str//\%D/}
+    str=${str//\%n/}
+    str=${str//\%N/}
+    str=${str//\%i/}
+    str=${str//\%c/}
+    str=${str//\%k/}
+    str=${str//\%v/}
+    str=${str//\%m/}
+    echo $str
+}
+
+# $THEME env variable set via sway config.
+
+# check for env variable, if exists we are the
+# forked shell, get the waiting string from the fifo
+# and call fzf and sway from there.
+prompt=' '
+#marker=' '
+pointer='ﰲ'
+header="Launch App"
+if [[ -n $SMD_FIFO ]]; then
+    rm -rf $SMD_FIFO
+
+    declare -A name_to_exec
+    for p in $(fd -H -i -t file --glob "*.desktop" \
+        /usr/share/applications \
+        /usr/local/share/applications \
+        ~/.local/share/applications \
+        /var/lib/flatpak/app); do
+
+        # ignore /files directory for flatpak 
+        if [[ "$p" == *"/files/share/applications"* ]]; then
+            continue
+        fi
+
+        readarray -t name_and_exec <<< $(cat $p | grep -m 2 -we "Name=.*" -we "Exec=.*" | sort)
+        exec=${name_and_exec[0]#*=}
+        name=${name_and_exec[1]#*=}
+        if [[ -n $name ]] && [[ -n $exec ]];
+        then
+            name_to_exec[$name]=$exec
+        fi
+    done
+
+    # build fzf string
+    IFS=$'\n'
+    apps=""
+    for key in "${!name_to_exec[@]}"; do 
+        apps="$apps\n $key"
+    done
+
+    selection=$(printf $apps | fzf --header=$header --prompt="$prompt" --pointer="$pointer" --reverse --border --no-info $fzf_color)
+    selection=$(echo $selection | xargs echo -n)
+    if [[ -z $selection ]]; then
+        exit
+    fi
+    ex=$(rm_field_codes ${name_to_exec[$selection]})
+    setsid --fork bash -c $ex &> /dev/null
+    sleep .5
+    exit
+fi
+
+lines=20
+columns=$((columns+"${#header}"+20))
+if [[ columns -gt 100 ]];
+then
+    columns=100
+fi
+
+# create fifo and launch a terminal with the title "fzf-switcher"
+# run the script in the new terminal which will see the env vars
+# and execute the first if block in this script.
+fifo=/tmp/std-$(date +%s)
+mkfifo $fifo
+SMD_FIFO=$fifo $SHELL -c "alacritty \
+    -o window.dimensions.columns=$columns \
+    -o window.dimensions.lines=$lines \
+    -o font.size=12.0 \
+    -o window.padding.x=0 \
+    -o window.padding.y=0 \
+    -o window.opacity=0.0 \
+    --title "fzf-switcher" \
+    -e $SCRIPTPATH/$SCRIPTNAME"&

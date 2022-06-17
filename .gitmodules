@@ -4,3 +4,6 @@
 [submodule ".config/alacritty/base16-alacritty"]
 	path = .config/alacritty/base16-alacritty
 	url = git@github.com:aarowill/base16-alacritty.git
+[submodule ".config/base16-shell"]
+	path = .config/base16-shell
+	url = git@github.com:chriskempson/base16-shell.git
